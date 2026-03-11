@@ -55,4 +55,26 @@ describe('Formatting - Prettier', () => {
 			},
 		]);
 	});
+
+	it('Preserves trailing commas in frontmatter multi-line function calls', async () => {
+		const document = await languageServer.handle.openTextDocument(
+			path.join(fixtureDir, 'trailingComma.astro'),
+			'astro',
+		);
+		const formatEdits = await languageServer.handle.sendDocumentFormattingRequest(document.uri, {
+			tabSize: 2,
+			insertSpaces: true,
+		});
+
+		assert.ok(formatEdits && formatEdits.length > 0, 'Expected formatting edits to be returned');
+		const formattedText = formatEdits![0].newText;
+		// Regression test: version 2.8.1 was removing trailing commas in frontmatter.
+		// After formatting, the multi-line function call should have a trailing comma
+		// before the closing parenthesis.
+		assert.match(
+			formattedText,
+			/,\r?\n\)/,
+			'Expected formatted output to contain a trailing comma in the multi-line function call',
+		);
+	});
 });

@@ -109,16 +109,18 @@ export function getLanguageServicePlugins(
 						document.uri,
 					);
 
-					// Return a config with the following cascade:
-					// - Prettier config file should always win if it exists, if it doesn't:
-					// - Prettier config from the VS Code extension is used, if it doesn't exist:
-					// - Use the editor's basic configuration settings
+					// Only spread editorOptions when a prettier config file is present.
+					// When configOptions is null (no .prettierrc etc.), rely on Prettier's defaults
+					// to prevent IDE defaults (e.g. older prettier-vscode sets trailingComma: "es5")
+					// from overriding Prettier 3's built-in defaults (e.g. trailingComma: "all").
+					const configuredOptions =
+						configOptions !== null ? { ...editorOptions, ...configOptions } : {};
+
 					const resolvedConfig = {
 						filepath: filePath,
 						tabWidth: formatOptions.tabSize,
 						useTabs: !formatOptions.insertSpaces,
-						...editorOptions,
-						...configOptions,
+						...configuredOptions,
 					};
 
 					return {

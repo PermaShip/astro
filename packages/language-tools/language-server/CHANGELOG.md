@@ -1,5 +1,11 @@
 # @astrojs/language-server
 
+## Unreleased
+
+### Patch Changes
+
+- Fixes a regression introduced in 2.8.1 where trailing commas were removed from multi-line function calls in frontmatter when formatting `.astro` files without a Prettier config file present. Editor-level Prettier settings (e.g. from older `esbenp.prettier-vscode` versions that default to `trailingComma: "es5"`) are no longer applied when no `.prettierrc` or other Prettier config exists, allowing Prettier 3's built-in default of `"all"` to take effect.
+
 ## 2.16.4
 
 ### Patch Changes
