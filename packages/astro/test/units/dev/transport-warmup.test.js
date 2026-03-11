@@ -7,6 +7,15 @@ import { createDevelopmentManifest } from '../../../dist/vite-plugin-astro-serve
 import { createBasicSettings, createFixture, defaultLogger } from '../test-utils.js';
 
 /**
+ * Minimal RouteData object for use in routesList mocks.
+ * Provides the fields required by serializeRouteData() inside createVite().
+ * @param {string} component
+ */
+function makeRoute(component) {
+	return { component, pattern: /.*/, fallbackRoutes: [], type: 'page', params: [], segments: [], prerender: false, isIndex: false, origin: 'project', route: '/' + component };
+}
+
+/**
  * Minimal ModuleLoader mock for unit tests.
  * @param {(src: string) => Promise<Record<string, any>>} importFn
  */
@@ -33,7 +42,7 @@ describe('createVite server.warmup config', () => {
 		const fixture = await createFixture({});
 		const settings = await createBasicSettings({ root: fixture.path });
 		const routesList = {
-			routes: [{ component: 'src/pages/index.astro' }, { component: 'src/pages/about.astro' }],
+			routes: [makeRoute('src/pages/index.astro'), makeRoute('src/pages/about.astro')],
 		};
 
 		const config = await createVite(
@@ -64,8 +73,8 @@ describe('createVite server.warmup config', () => {
 		const settings = await createBasicSettings({ root: fixture.path });
 		const routesList = {
 			routes: [
-				{ component: 'src/pages/index.astro' },
-				{ component: '\0virtual:astro-internal' },
+				makeRoute('src/pages/index.astro'),
+				makeRoute('\0virtual:astro-internal'),
 			],
 		};
 
@@ -96,9 +105,9 @@ describe('createVite server.warmup config', () => {
 		const settings = await createBasicSettings({ root: fixture.path });
 		const routesList = {
 			routes: [
-				{ component: 'src/pages/index.astro' },
-				{ component: 'astro:middleware' },
-				{ component: 'virtual:astro-config' },
+				makeRoute('src/pages/index.astro'),
+				makeRoute('astro:middleware'),
+				makeRoute('virtual:astro-config'),
 			],
 		};
 
@@ -132,7 +141,7 @@ describe('createVite server.warmup config', () => {
 		const fixture = await createFixture({});
 		const settings = await createBasicSettings({ root: fixture.path });
 		const routesList = {
-			routes: [{ component: 'src/pages/index.astro' }],
+			routes: [makeRoute('src/pages/index.astro')],
 		};
 
 		const config = await createVite(
