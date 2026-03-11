@@ -190,6 +190,19 @@ export async function createVite(
 				// Prevent watching during the build to speed it up
 				ignored: command === 'build' ? ['**'] : undefined,
 			},
+			// Pre-warm SSR route modules to avoid transport invoke timeouts on first
+			// request in slow file-system environments (Docker, WSL). Vite's warmup is
+			// non-blocking and does not delay server listen().
+			warmup:
+				command === 'dev'
+					? {
+							ssrFiles: routesList.routes
+								.map((r) => r.component)
+								.filter(
+									(c) => !c.startsWith('\0') && !/^[a-z][a-z0-9+\-.]*:/i.test(c),
+								),
+						}
+					: undefined,
 		},
 		resolve: {
 			alias: [
