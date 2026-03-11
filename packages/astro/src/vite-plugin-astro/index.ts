@@ -115,7 +115,7 @@ export default function astro({ settings, logger }: AstroPluginOptions): vite.Pl
 				server = _server;
 				// Make sure deleted files are removed from the compile metadata to save memory
 				server.watcher.on('unlink', (filename) => {
-					astroFileToCompileMetadata.delete(filename);
+					astroFileToCompileMetadata.delete(normalizePath(normalizeFilename(filename, config.root)));
 				});
 			},
 			buildStart() {
@@ -264,7 +264,7 @@ export default function astro({ settings, logger }: AstroPluginOptions): vite.Pl
 						return;
 					}
 
-					const filename = normalizePath(parsedId.filename);
+					const filename = normalizePath(normalizeFilename(parsedId.filename, config.root));
 
 					// If an Astro component is imported in code used on the client, we return an empty
 					// module so that Vite doesn’t bundle the server-side Astro code for the client.
@@ -310,7 +310,7 @@ export default function astro({ settings, logger }: AstroPluginOptions): vite.Pl
 				},
 			},
 			async handleHotUpdate(ctx) {
-				return handleHotUpdate(ctx, { logger, astroFileToCompileMetadata });
+				return handleHotUpdate(ctx, { config, logger, astroFileToCompileMetadata });
 			},
 		},
 		{

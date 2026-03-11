@@ -21,7 +21,12 @@ export function resolveRoot(cwd?: string | URL): string {
 	if (cwd instanceof URL) {
 		cwd = fileURLToPath(cwd);
 	}
-	return cwd ? path.resolve(cwd) : process.cwd();
+	const resolved = cwd ? path.resolve(cwd) : process.cwd();
+	try {
+		return fs.realpathSync.native(resolved);
+	} catch {
+		return resolved;
+	}
 }
 
 // Config paths to search for.

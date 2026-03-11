@@ -1,18 +1,23 @@
-import type { HmrContext } from 'vite';
+import { normalizePath, type HmrContext } from 'vite';
 import type { Logger } from '../core/logger/core.js';
+import type { AstroConfig } from '../types/public/config.js';
+import { normalizeFilename } from '../vite-plugin-utils/index.js';
 import { parseAstroRequest } from './query.js';
 import type { CompileMetadata } from './types.js';
 import { frontmatterRE } from './utils.js';
 
 interface HandleHotUpdateOptions {
+	config: AstroConfig;
 	logger: Logger;
 	astroFileToCompileMetadata: Map<string, CompileMetadata>;
 }
 
 export async function handleHotUpdate(
 	ctx: HmrContext,
-	{ logger, astroFileToCompileMetadata }: HandleHotUpdateOptions,
+	{ config, logger, astroFileToCompileMetadata }: HandleHotUpdateOptions,
 ) {
+	const normalizedCtxFile = normalizePath(normalizeFilename(ctx.file, config.root));
+
 	// HANDLING 1: Invalidate compile metadata if CSS dependency updated
 	//
 	// If any `ctx.file` is part of a CSS dependency of any Astro file, invalidate its `astroFileToCompileMetadata`
@@ -29,7 +34,7 @@ export async function handleHotUpdate(
 	// If only the style code has changed, e.g. editing the `color`, then we can directly invalidate
 	// the Astro CSS virtual modules only. The main Astro module's JS result will be the same and doesn't
 	// need to be invalidated.
-	const oldCode = astroFileToCompileMetadata.get(ctx.file)?.originalCode;
+	const oldCode = astroFileToCompileMetadata.get(normalizedCtxFile)?.originalCode;
 	if (oldCode == null) return;
 	const newCode = await ctx.read();
 
@@ -37,7 +42,7 @@ export async function handleHotUpdate(
 		logger.debug('watch', 'style-only change');
 		// Invalidate its `astroFileToCompileMetadata` so that the next transform of Astro style virtual module
 		// will re-generate it
-		astroFileToCompileMetadata.delete(ctx.file);
+		astroFileToCompileMetadata.delete(normalizedCtxFile);
 		return ctx.modules.filter((mod) => {
 			if (!mod.id) {
 				return false;
