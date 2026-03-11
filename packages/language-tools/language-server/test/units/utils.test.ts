@@ -5,6 +5,7 @@ import type { Node } from 'vscode-html-languageservice';
 import * as html from 'vscode-html-languageservice';
 import { getTSXRangesAsLSPRanges, safeConvertToTSX } from '../../dist/core/astro2tsx.js';
 import { getAstroMetadata } from '../../dist/core/parseAstro.js';
+import { patchTSX } from '../../dist/core/utils.js';
 import * as utils from '../../dist/plugins/utils.js';
 
 describe('Utilities', async () => {
@@ -118,5 +119,36 @@ describe('Utilities', async () => {
 			range: Range.create(2, 0, 2, 0),
 			newText: '\nfoo---',
 		});
+	});
+});
+
+describe('patchTSX', () => {
+	it('uses the PascalCase component name when there is no import conflict', () => {
+		const code = `import { Image } from 'astro:assets';\nexport default function foo__AstroComponent_() { return <Image src="" alt="" />; }`;
+		const result = patchTSX(code, '/src/pages/foo.astro');
+		assert.ok(result.includes('function Foo('), `Expected "function Foo(" but got: ${result}`);
+		assert.ok(!result.includes('function _Foo_('), `Did not expect "_Foo_" but got: ${result}`);
+	});
+
+	it('uses _Name_ when the PascalCase component name conflicts with an import binding', () => {
+		const code = `import { Image } from 'astro:assets';\nexport default function image__AstroComponent_() { return <Image src="" alt="" />; }`;
+		const result = patchTSX(code, '/src/pages/image.astro');
+		assert.ok(
+			result.includes('function _Image_('),
+			`Expected "function _Image_(" but got: ${result}`,
+		);
+		assert.ok(
+			!result.includes('function Image('),
+			`Did not expect unguarded "function Image(" but got: ${result}`,
+		);
+	});
+
+	it('uses _Name_ when a renamed import binding conflicts with the component name', () => {
+		const code = `import { SomeType as Image } from 'astro:assets';\nexport default function image__AstroComponent_() { return null; }`;
+		const result = patchTSX(code, '/src/pages/image.astro');
+		assert.ok(
+			result.includes('function _Image_('),
+			`Expected "function _Image_(" but got: ${result}`,
+		);
 	});
 });
