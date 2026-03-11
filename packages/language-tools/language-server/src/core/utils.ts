@@ -73,8 +73,25 @@ export function classNameFromFilename(filename: string): string {
 
 // TODO: Patch the upstream packages with these changes
 export function patchTSX(code: string, filePath: string) {
-	const basename = filePath.split('/').pop()!;
+	const basenameWithExt = filePath.split('/').pop()!;
+	const extDotIdx = basenameWithExt.lastIndexOf('.');
+	const basename = extDotIdx !== -1 ? basenameWithExt.slice(0, extDotIdx) : basenameWithExt;
 	const isDynamic = basename.startsWith('[') && basename.endsWith(']');
+
+	// Collect all import bindings present in the code to detect name conflicts
+	const importBindings = new Set<string>();
+	const importBindingRegex = /import\s+(?:type\s+)?\{([^}]+)\}/g;
+	let importMatch: RegExpExecArray | null;
+	while ((importMatch = importBindingRegex.exec(code)) !== null) {
+		for (const binding of importMatch[1].split(',')) {
+			const name = binding
+				.trim()
+				.split(/\s+as\s+/)
+				.pop()!
+				.trim();
+			if (name) importBindings.add(name);
+		}
+	}
 
 	return code.replace(/\b(\S*)__AstroComponent_/g, (fullMatch, m1: string) => {
 		// If we don't have a match here, it usually means the file has a weird name that couldn't be expressed with valid identifier characters
@@ -82,6 +99,9 @@ export function patchTSX(code: string, filePath: string) {
 			if (basename === '404') return 'FourOhFour';
 			return fullMatch;
 		}
-		return isDynamic ? `_${m1}_` : m1[0].toUpperCase() + m1.slice(1);
+		if (isDynamic) return `_${m1}_`;
+		const componentName = m1[0].toUpperCase() + m1.slice(1);
+		// Avoid conflicts with import bindings that share the same name
+		return importBindings.has(componentName) ? `_${componentName}_` : componentName;
 	});
 }
