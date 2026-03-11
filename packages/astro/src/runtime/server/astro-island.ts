@@ -107,8 +107,9 @@ declare const Astro: {
 				await Astro[directive]!(
 					async () => {
 						const rendererUrl = this.getAttribute('renderer-url');
+						const componentUrl = this.getAttribute('component-url')!;
 						const [componentModule, { default: hydrator }] = await Promise.all([
-							import(this.getAttribute('component-url')!),
+							import(componentUrl),
 							rendererUrl ? import(rendererUrl) : () => () => {},
 						]);
 						const componentExport = this.getAttribute('component-export') || 'default';
