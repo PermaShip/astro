@@ -200,6 +200,16 @@ export class RunnablePipeline extends Pipeline {
 				throw error;
 			}
 
+			// Augment Vite transport timeout errors with actionable Docker/WSL guidance.
+			// The timeout occurs because slow file-system I/O in Docker/WSL causes module
+			// transformation to exceed Vite's 60s transport invoke limit on first load.
+			if (error instanceof Error && error.message.includes('transport invoke timed out')) {
+				error.message +=
+					'\n\nHint: This error commonly occurs in Docker or WSL environments where ' +
+					'file-system I/O is slow. Try adding `server: { watch: { usePolling: true } }` ' +
+					'to your Astro config to work around this issue.';
+			}
+
 			throw enhanceViteSSRError({ error, filePath, loader });
 		}
 	}
